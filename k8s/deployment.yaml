@@ -13,7 +13,7 @@ spec:
         app: hello-world
     spec:
       containers:
-      - name: hello-world
+         name: hello-world
         image: ghcr.io/${GITHUB_REPOSITORY}/hello-world:latest
     ports:
      - containerPort: 8080
