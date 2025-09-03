@@ -1,23 +1,59 @@
-# ==== set your names ====
-REGION="eastus"                   # pick a nearby region
-RG="rg-aks-hello"                 # resource group name
-AKS="aks-hello"                   # aks cluster name
+name: Build & Deploy Hello World to AKS
 
-# (optional) make sure you’re on the right subscription
-az login
-az account list -o table
-# If needed: az account set --subscription "<SUBSCRIPTION_ID or Name>"
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
 
-# Create resource group
-az group create -n $RG -l $REGION
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository }}/hello-world:latest
 
-# Create AKS (Free tier, 1-node B2s VM, managed identity)
-az aks create \
-  -g $RG \
-  -n $AKS \
-  -l $REGION \
-  --tier Free \
-  --node-count 1 \
-  --node-vm-size Standard_B2s \
-  --enable-managed-identity \
-  --generate-ssh-keys
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Login to Azure using SP JSON in AZURE_CREDENTIALS secret
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # Point kubectl to your AKS cluster
+      - name: Set AKS context
+        uses: azure/aks-set-context@v3
+        with:
+          resource-group: ${{ secrets.AZURE_RESOURCE_GROUP }}
+          cluster-name: ${{ secrets.AZURE_AKS_NAME }}
+
+      # Log in to GitHub Container Registry (GHCR)
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }
+
+     # Build & push Docker image
+      - name: Build and push image
+        run: |
+          docker build -t "${IMAGE_NAME}" .
+          docker push "${IMAGE_NAME}"
+
+      # Deploy manifests to AKS
+      - name: Deploy to AKS
+        uses: azure/k8s-deploy@v4
+        with:
+          action: deploy
+          manifests: |
+            k8s/deployment.yaml
+          images: |
+            ${{ env.IMAGE_NAME }}
