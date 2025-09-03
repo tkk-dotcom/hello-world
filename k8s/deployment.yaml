@@ -14,6 +14,7 @@ spec:
     spec:
       containers:
         - name: hello-world
-          IMAGE_NAME: ghcr.io/tkk-dotcom/hello-world:latest
+          image: ghcr.io/tkk-dotcom/hello-world:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
