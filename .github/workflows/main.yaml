@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 env:
-   IMAGE_NAME: ghcr.io/tkk-dotcom/hello-world:latest
+  IMAGE_NAME: ghcr.io/tkk-dotcom/hello-world:latest
 
 permissions:
   contents: read
@@ -51,7 +51,6 @@ jobs:
       - name: Deploy to AKS
         uses: azure/k8s-deploy@v4
         with:
-          action: deploy
           manifests: |
             k8s/deployment.yaml
           images: |
