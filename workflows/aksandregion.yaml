@@ -1,0 +1,23 @@
+# ==== set your names ====
+REGION="eastus"                   # pick a nearby region
+RG="rg-aks-hello"                 # resource group name
+AKS="aks-hello"                   # aks cluster name
+
+# (optional) make sure you’re on the right subscription
+az login
+az account list -o table
+# If needed: az account set --subscription "<SUBSCRIPTION_ID or Name>"
+
+# Create resource group
+az group create -n $RG -l $REGION
+
+# Create AKS (Free tier, 1-node B2s VM, managed identity)
+az aks create \
+  -g $RG \
+  -n $AKS \
+  -l $REGION \
+  --tier Free \
+  --node-count 1 \
+  --node-vm-size Standard_B2s \
+  --enable-managed-identity \
+  --generate-ssh-keys
