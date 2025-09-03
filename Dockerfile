@@ -11,4 +11,4 @@ COPY app.py .
 ENV PYTHONUNBUFFERED=1
 
 # Correct exec-form CMD (each arg in quotes)
-CMD ["python3", "app.py"]
+CMD ["python","app.py"]
