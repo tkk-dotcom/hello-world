@@ -18,35 +18,32 @@ jobs:
 
       # Step ⿡: Read parameters
       - name: Load parameters
-    id: params
-    run: |
-     echo "##[group]Loading parameters"
-     echo "Contents of $PARAM_FILE:"
-     cat $PARAM_FILE
-     echo "##[endgroup]"
+             echo "##[group]Loading parameters"
+             echo "Contents of $PARAM_FILE:"
+             cat $PARAM_FILE
+             echo "##[endgroup]"
 
-     echo "Extracting values from $PARAM_FILE..."
-     SUBSCRIPTION_ID=$(jq -r '.subscriptionId' $PARAM_FILE)
-     RESOURCE_GROUP=$(jq -r '.resourceGroup' $PARAM_FILE)
-     CLUSTER_NAME=$(jq -r '.aksClusterName' $PARAM_FILE)
-     ACR_NAME=$(jq -r '.acrName' $PARAM_FILE)
-     IMAGE_NAME=$(jq -r '.imageName' $PARAM_FILE)
-     NAMESPACE=$(jq -r '.namespace' $PARAM_FILE)
+             echo "Extracting values from $PARAM_FILE..."
+             SUBSCRIPTION_ID=$(jq -r '.subscriptionId' $PARAM_FILE)
+            RESOURCE_GROUP=$(jq -r '.resourceGroup' $PARAM_FILE)
+            CLUSTER_NAME=$(jq -r '.aksClusterName' $PARAM_FILE)
+            ACR_NAME=$(jq -r '.acrName' $PARAM_FILE)
+           IMAGE_NAME=$(jq -r '.imageName' $PARAM_FILE)
+           NAMESPACE=$(jq -r '.namespace' $PARAM_FILE)
 
-     echo "##[group]Parsed Values"
-     echo "Subscription ID: $SUBSCRIPTION_ID"
-     echo "Resource Group:  $RESOURCE_GROUP"
-     echo "AKS Cluster:     $CLUSTER_NAME"
-     echo "ACR Name:        $ACR_NAME"
-     echo "Image Name:      $IMAGE_NAME"
-     echo "Namespace:       $NAMESPACE"
-     echo "##[endgroup]"
+             echo "##[group]Parsed Values"
+          echo "Subscription ID:$SUBSCRIPTION_ID"
+          echo "AKS Cluster:$CLUSTER_NAME"
+          echo "ACR Name:$ACR_NAME"
+          echo "Image Name:$IMAGE_NAME"
+          echo "Namespace:$NAMESPACE"
+            echo "##[endgroup]"
 
-     echo "RESOURCE_GROUP=$RESOURCE_GROUP" >> $GITHUB_ENV
-     echo "CLUSTER_NAME=$CLUSTER_NAME" >> $GITHUB_ENV
-     echo "ACR_NAME=$ACR_NAME" >> $GITHUB_ENV
-     echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
-     echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
+         echo "RESOURCE_GROUP=$RESOURCE_GROUP" >> $GITHUB_ENV
+         echo "CLUSTER_NAME=$CLUSTER_NAME" >> $GITHUB_ENV
+         echo "ACR_NAME=$ACR_NAME" >> $GITHUB_ENV
+         echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
+         echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
 
       # Step ⿢: Azure Login (OIDC recommended)
       - name: Azure Login
