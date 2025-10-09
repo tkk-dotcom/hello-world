@@ -6,7 +6,7 @@ on:
 
 env:
   # Reference parameters file
-  PARAM_FILE: aks-parameters.json
+   PARAM_FILE: aks-parameters.json
 
 jobs:
   create-and-deploy:
