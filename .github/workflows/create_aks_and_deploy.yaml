@@ -29,6 +29,11 @@ jobs:
       - name: Set Azure Cloud 
         run: az cloud set -n AzureCloud
 
+      - name: Verify Azure Login
+        run: |
+          az account show
+          az cloud show
+
       # Step 2: Create Resource Group, ACR, and AKS
       - name: Create Azure Resources
         run: |
