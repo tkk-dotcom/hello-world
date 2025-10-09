@@ -1,98 +1,71 @@
-name: Create AKS and Deploy App
+name: create-and-deploy
 
 on:
   push:
     branches: [ main ]
 
-permissions:
-    contents: read
-
 env:
-  RG_NAME: myResourceGroup
-  ACR_NAME: myContainerRegistry
-  AKS_NAME: myKubernetesCluster
-  LOCATION: eastus
+  # Reference parameters file
+  PARAM_FILE: aks-parameters.json
 
 jobs:
   create-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v3
 
-      # Step 1: Login to Azure
+      # Step ⿡: Read parameters
+      - name: Load parameters
+        id: params
+        run: |
+          echo "##[group]Loading parameters"
+          SUBSCRIPTION_ID=$(jq -r '.subscriptionId' $PARAM_FILE)
+          RESOURCE_GROUP=$(jq -r '.resourceGroup' $PARAM_FILE)
+          CLUSTER_NAME=$(jq -r '.aksClusterName' $PARAM_FILE)
+          ACR_NAME=$(jq -r '.acrName' $PARAM_FILE)
+          IMAGE_NAME=$(jq -r '.imageName' $PARAM_FILE)
+          NAMESPACE=$(jq -r '.namespace' $PARAM_FILE)
+          echo "SUBSCRIPTION_ID=$SUBSCRIPTION_ID" >> $GITHUB_ENV
+          echo "RESOURCE_GROUP=$RESOURCE_GROUP" >> $GITHUB_ENV
+          echo "CLUSTER_NAME=$CLUSTER_NAME" >> $GITHUB_ENV
+          echo "ACR_NAME=$ACR_NAME" >> $GITHUB_ENV
+          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
+          echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
+          echo "##[endgroup]"
+
+      # Step ⿢: Azure Login (OIDC recommended)
       - name: Azure Login
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-              auth-type:'OIDC'
-                             
-      - name: Set Azure Cloud 
-        run: az cloud set -n AzureCloud
+          auth-type: 'OIDC'
 
-      - name: Verify Azure Login
-        run: |
-          az account show
-          az cloud show
-
-      # Step 2: Create Resource Group, ACR, and AKS
-      - name: Create Azure Resources
-        run: |
-            az group create --name $RG_NAME --location $LOCATION
-            az acr create --resource-group $RG_NAME --name $ACR_NAME --sku Basic
-            az aks create --resource-group $RG_NAME --name $AKS_NAME --node-count 1 --enable-addons monitoring --generate-ssh-keys
-
-      - name: Get ACR Login Server dynamically
-        id: acrLoginServer
-        run: echo "loginServer=$(az acr show --name $ACR_NAME --query loginServer -o tsv)" >> $GITHUB_ENV
-
-      - name: ACR Login
-        run: az acr login --name $ACR_NAME
-
-      # Step 3: Get ACR login server dynamically
-      - name: Get ACR Login Server
-        id: acr
-        uses: azure/cli@v2
+      # Step ⿣: AKS Context
+      - name: Set AKS Context
+        uses: azure/aks-set-context@v3
         with:
-          inlineScript: |
-            echo "ACR login server: $(az acr show -n $ACR_NAME --query loginServer -o tsv)"
-            echo "ACR_LOGIN_SERVER=$(az acr show -n $ACR_NAME --query loginServer -o tsv)" >> $GITHUB_ENV
+          resource-group: ${{ env.RESOURCE_GROUP }}
+          cluster-name: ${{ env.CLUSTER_NAME }}
 
-      # Step 4: Login to ACR
-      - name: ACR login
-        uses: azure/cli@v2
+      # Step ⿤: Build & Push Image to ACR
+      - name: Build and Push Image
+        uses: azure/docker-login@v2
         with:
-          inlineScript: |
-            az acr login -n $ACR_NAME
+          login-server: ${{ env.ACR_NAME }}.azurecr.io
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - run: |
+          docker build -t ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.run_number }} .
+          docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.run_number }}
 
-      # Step 5: Build and Push Docker Image
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build & Push Image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          tags: |
-            ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-            ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest
-
-      # Step 6: Get AKS context
-      - name: Set AKS context
-        uses: azure/aks-set-context@v4
-        with:
-          resource-group: ${{ env.RG }}
-          cluster-name: ${{ env.AKS }}
-
-      # Step 7: Deploy Application to AKS
+      # Step ⿥: Deploy to AKS
       - name: Deploy to AKS
-        uses: Azure/k8s-deploy@v4
-        with:
-          manifests: |
-            k8s/hello.yaml
-          images: |
-            ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-          strategy: basic
+        run: |
+          kubectl apply -f k8s/deployment.yml
+          kubectl apply -f k8s/service.yml
+          kubectl rollout status deployment/${{ env.IMAGE_NAME }} -n ${{ env.NAMESPACE }}
