@@ -1,0 +1,8 @@
+{
+  "subscriptionId": "1569933f-380c-4d4b-9d18-599f50547cb9",
+  "resourceGroup": "myResourceGroup",
+  "aksClusterName": "myAksCluster",
+  "acrName": "myContainerRegistry",
+  "imageName": "hello-world",
+  "namespace": "default"
+}
