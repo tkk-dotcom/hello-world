@@ -1,14 +1,20 @@
-FROM python:3.9-slim
+# Use the official Node.js image
+FROM node:18
+
+# Set working directory
 WORKDIR /app
-# Install deps
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy app code
-COPY app.py .
+# Copy dependency files first for caching
+COPY package*.json ./
 
-# Flush logs immediately
-ENV PYTHONUNBUFFERED=1
+# Install dependencies
+RUN npm install
 
-# Correct exec-form CMD (each arg in quotes)
-CMD ['python', 'app.py']
+# Copy application code
+COPY . .
+
+# Expose port 3000
+EXPOSE 3000
+
+# Start the app
+CMD ["npm", "start"]
