@@ -28,6 +28,9 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Set Azure Cloud 
+        run: az cloud set -n AzureCloud
+
       # Step 2: Create Resource Group, ACR, and AKS
       - name: Create Azure Resources
         uses: azure/cli@v2
