@@ -2,25 +2,23 @@ name: Create AKS and Deploy App
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main ]
 
 permissions:
-  id-token: write
-  contents: read
+    contents: read
 
 env:
-  RG: rg-aks-hello
-  LOC: eastus
-  ACR_NAME: myacr${{ github.run_number }}
-  AKS: aks-hello
-  IMAGE_NAME: hello-aks
-  IMAGE_TAG: ${{ github.sha }}
+  RG_NAME: myResourceGroup
+  ACR_NAME: myContainerRegistry
+  AKS_NAME: myKubernetesCluster
+  LOCATION: eastus
 
 jobs:
   create-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - name: Checkout Code
+        uses: actions/checkout@v5
 
       # Step 1: Login to Azure
       - name: Azure Login
@@ -33,17 +31,17 @@ jobs:
 
       # Step 2: Create Resource Group, ACR, and AKS
       - name: Create Azure Resources
-        uses: azure/cli@v2
-        with:
-          inlineScript: |
-            echo "Creating Resource Group..."
-            az group create -n $RG -l $LOC
-            
-            echo "Creating ACR..."
-            az acr create -g $RG -n $ACR_NAME --sku Basic
-            
-            echo "Creating AKS and attaching ACR..."
-            az aks create -g $RG -n $AKS --node-count 1 --generate-ssh-keys --attach-acr $ACR_NAME
+        run: |
+            az group create --name $RG_NAME --location $LOCATION
+            az acr create --resource-group $RG_NAME --name $ACR_NAME --sku Basic
+            az aks create --resource-group $RG_NAME --name $AKS_NAME --node-count 1 --enable-addons monitoring --generate-ssh-keys
+
+      - name: Get ACR Login Server dynamically
+        id: acrLoginServer
+        run: echo "loginServer=$(az acr show --name $ACR_NAME --query loginServer -o tsv)" >> $GITHUB_ENV
+
+      - name: ACR Login
+        run: az acr login --name $ACR_NAME
 
       # Step 3: Get ACR login server dynamically
       - name: Get ACR Login Server
