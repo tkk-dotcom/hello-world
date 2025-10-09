@@ -4,5 +4,5 @@
   "aksClusterName": "MyAksCluster",
   "acrName": "MyContainerRegistry",
   "imageName": "hello-world",
-  "namespace": "default"
+  "namespace":"default"
 }
