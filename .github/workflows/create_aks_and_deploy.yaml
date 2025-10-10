@@ -55,14 +55,6 @@ jobs:
           tenant-id: ${{ secrets.TENANT_ID }}
           subscription-id: ${{ secrets.SUBSCRIPTION_ID }}
          
-      # Step 3: Set AKS Context
-      - name: Set AKS Context
-        run: |
-          echo "Setting AKS context..."
-          echo "Resource Group: ${{ env.RESOURCE_GROUP }}"
-          echo "AKS Cluster: ${{ env.AKS_CLUSTER_NAME }}"
-          az aks get-credentials --resource-group "${{ env.RESOURCE_GROUP }}" --name "${{ env.AKS_CLUSTER_NAME }}" --overwrite-existing
-
       - name: Create Resource Group
         run: |
           echo "Creating Resource Group if not exists..."
@@ -79,6 +71,14 @@ jobs:
           --enable-addons monitoring \
           --generate-ssh-keys \
           --enable-managed-identity
+
+          # Step 3: Set AKS Context
+      - name: Set AKS Context
+        run: |
+          echo "Setting AKS context..."
+          echo "Resource Group: ${{ env.RESOURCE_GROUP }}"
+          echo "AKS Cluster: ${{ env.AKS_CLUSTER_NAME }}"
+          az aks get-credentials --resource-group "${{ env.RESOURCE_GROUP }}" --name "${{ env.AKS_CLUSTER_NAME }}" --overwrite-existing
 
       # Step 4: Build and Push Docker image
       - name: Build and Push Docker image
