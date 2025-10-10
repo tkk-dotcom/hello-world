@@ -25,6 +25,12 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Validate aks-parameters.json
+        run: |
+          echo "Validating JSON file syntax..."
+          cat aks-parameters.json | jq . >/dev/null
+          echo "✅ JSON structure is valid."
+
       # Step 2: Load parameters from JSON
       - name: Load parameters from JSON
         id: load_params
