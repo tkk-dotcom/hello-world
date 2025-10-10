@@ -1,4 +1,4 @@
-name: create-and-deploy
+name: Create and Deploy to AKS
 
 on:
   push:
@@ -9,29 +9,29 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: RG-AKS-Hello
-   
+
     env:
       RESOURCE_GROUP: RG-AKS-Hello
       AKS_CLUSTER_NAME: aks-hello-world
       ACR_NAME: myakshelloregitry123
+      IMAGE_NAME: hello-world
       NAMESPACE: default
-
 
     permissions:
       id-token: write
       contents: read
-    
+
     steps:
+      # Step 1: Checkout code
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # Step 1: Load parameters
+      # Step 2: Load parameters from JSON
       - name: Load parameters from JSON
         id: load_params
         shell: bash
         run: |
           echo "Reading deployment parameters..."
-          echo "File content:"
           cat aks-parameters.json
 
           echo "Validating JSON structure..."
@@ -43,18 +43,12 @@ jobs:
           ACR_NAME=$(jq -r '.parameters.acrName.value' aks-parameters.json)
           NAMESPACE=$(jq -r '.parameters.namespace.value' aks-parameters.json)
 
-          echo "RESOURCE_GROUP=$RESOURCE_GROUP"
-          echo "AKS_CLUSTER_NAME=$AKS_CLUSTER_NAME"
-          echo "ACR_NAME=$ACR_NAME"
-          echo "NAMESPACE=$NAMESPACE"
-          {
-           echo "RESOURCE_GROUP=$RESOURCE_GROUP"
-           echo "AKS_CLUSTER_NAME=$AKS_CLUSTER_NAME"
-           echo "ACR_NAME=$ACR_NAME"
-           echo "NAMESPACE=$NAMESPACE"
-          } >> $GITHUB_ENV
-
-      # Step 2: Azure Login (OIDC)
+          echo "RESOURCE_GROUP=$RESOURCE_GROUP" >> $GITHUB_ENV
+          echo "AKS_CLUSTER_NAME=$AKS_CLUSTER_NAME" >> $GITHUB_ENV
+          echo "ACR_NAME=$ACR_NAME" >> $GITHUB_ENV
+          echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
+        
+        # Step 3: Azure Login (OIDC)
       - name: Azure Login
         uses: azure/login@v2
         with:
@@ -62,64 +56,67 @@ jobs:
           tenant-id: ${{ secrets.TENANT_ID }}
           subscription-id: ${{ secrets.SUBSCRIPTION_ID }}
 
-         # Step 3:  Create Resource group
+      # Step 4: Create Resource Group if not exists
       - name: Create Resource Group
         run: |
           echo "Creating Resource Group if not exists..."
           az group create --name "${{ env.RESOURCE_GROUP }}" --location "eastus"
-          
-         # Step 4: Create AKS Cluster
+
+      # Step 5: Create AKS Cluster if not exists
       - name: Create AKS Cluster
         run: |
-          echo "Creating AKS Cluster if not exists..."
-          az aks show --name "${{ env.AKS_CLUSTER_NAME }}" --resource-group "${{ env.RESOURCE_GROUP }}" >/dev/null 2>&1 || \
-          az aks create \
-          --resource-group "${{ env.RESOURCE_GROUP }}" \
-          --name "${{ env.AKS_CLUSTER_NAME }}" \
-          --node-count 1 \
-          --enable-addons monitoring \
-          --generate-ssh-keys \
-          --enable-managed-identity
+          echo "Checking if AKS Cluster exists..."
+          if ! az aks show --name "${{ env.AKS_CLUSTER_NAME }}" --resource-group "${{ env.RESOURCE_GROUP }}" >/dev/null 2>&1; then
+            echo "Creating AKS Cluster..."
+            az aks create \
+              --resource-group "${{ env.RESOURCE_GROUP }}" \
+              --name "${{ env.AKS_CLUSTER_NAME }}" \
+              --node-count 1 \
+              --enable-addons monitoring \
+              --generate-ssh-keys \
+              --enable-managed-identity \
+              --location "eastus"
+          else
+            echo "AKS Cluster already exists."
+          fi
 
-      - name: Get AKS Credentials
+      # Step 6: Set AKS context
+      - name: Set AKS Context
         run: |
-          az aks get-credentials --resource-group $RESOURCE_GROUP --name $CLUSTER_NAME --overwrite-existing
+          echo "Setting AKS context..."
+          az aks get-credentials --resource-group "${{ env.RESOURCE_GROUP }}" --name "${{ env.AKS_CLUSTER_NAME }}" --overwrite-existing
 
-      - name: Deploy Hello World App
+      # Step 7: Ensure Namespace Exists
+      - name: Ensure Namespace Exists
         run: |
-          cat > hello-deployment.yaml <<EOF
-          apiVersion: apps/v1
-          kind: Deployment
-          metadata:
-            name: $APP_NAME
-          spec:
-            replicas: 1
-            selector:
-              matchLabels:
-                app: $APP_NAME
-            template:
-              metadata:
-                labels:
-                  app: $APP_NAME
-              spec:
-                containers:
-                - name: $APP_NAME
-                  image: $IMAGE_NAME
-                  ports:
-                  - containerPort: $PORT
-          ---
-          apiVersion: v1
-          kind: Service
-          metadata:
-            name: ${APP_NAME}-service
-          spec:
-            type: LoadBalancer
-            selector:
-              app: $APP_NAME
-            ports:
-            - port: 80
-              targetPort: $PORT
-          EOF
+          kubectl get namespace ${{ env.NAMESPACE }} || kubectl create namespace ${{ env.NAMESPACE }}
 
-          kubectl apply -f hello-deployment.yaml
-          kubectl get service ${APP_NAME}-service
+      # Step 8: Build and Push Docker Image
+       - name: Build and Push Docker image
+        run: |
+          echo "Logging into Azure Container Registry..."
+          TOKEN=$(az acr login --name ${{ env.ACR_NAME }} --expose-token --output tsv --query accessToken)
+          echo $TOKEN | docker login ${{ env.ACR_NAME }}.azurecr.io -u 00000000-0000-0000-0000-000000000000 --password-stdin
+
+          IMAGE_TAG=${{ github.run_number }}
+          IMAGE_FULL_NAME=${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:$IMAGE_TAG
+
+          echo "Building Docker image: $IMAGE_FULL_NAME"
+          docker build -t $IMAGE_FULL_NAME .
+          docker push $IMAGE_FULL_NAME
+
+          echo "IMAGE_FULL_NAME=$IMAGE_FULL_NAME" >> $GITHUB_ENV
+
+      # Step 9: Deploy to AKS
+      - name: Deploy to AKS
+        run: |
+          echo "Deploying to AKS..."
+          kubectl set image deployment/${{ secrets.DEPLOYMENT_NAME }} \
+            ${{ secrets.CONTAINER_NAME }}=${{ env.IMAGE_FULL_NAME }}
+          kubectl rollout status deployment/${{ secrets.DEPLOYMENT_NAME }} -n ${{ env.NAMESPACE }}
+
+      # Step 10: Verify Deployment
+      - name: Verify Deployment
+        run: |
+          echo "Verifying pods in namespace ${{ env.NAMESPACE }}..."
+          kubectl get pods -n ${{ env.NAMESPACE }}
