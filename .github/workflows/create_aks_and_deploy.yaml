@@ -91,6 +91,7 @@ jobs:
       - name: Create Azure Container Registry
         run: |
           echo "Creating Azure Container Registry if not exists..."
+          az extension add --name acr --yes || echo "ACR extension already installed."
           az acr show --name "${{ env.ACR_NAME }}" >/dev/null 2>&1 || \
           az acr create --name "${{ env.ACR_NAME }}" \
           --resource-group "${{ env.RESOURCE_GROUP }}" \
