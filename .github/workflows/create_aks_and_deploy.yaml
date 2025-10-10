@@ -24,12 +24,15 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-
-      - name: Validate aks-parameters.json
+        
+   # ✅ Step: Sanitize and Validate JSON
+      - name: Sanitize and Validate aks-parameters.json
         run: |
-          echo "Validating JSON file syntax..."
+          echo "Sanitizing JSON file..."
+          sed -i '1s/^\xEF\xBB\xBF//' aks-parameters.json
+          echo "Validating JSON syntax..."
           cat aks-parameters.json | jq . >/dev/null
-          echo "✅ JSON structure is valid."
+          echo "✅ JSON is valid and clean."
 
       # Step 2: Load parameters from JSON
       - name: Load parameters from JSON
