@@ -1,16 +1,27 @@
 {
-"parameters": {
-"resourceGroup": {
-"value": "RG-AKS-Hello"
-},
-"aksClusterName": {
-"value": "aks-hello-world"
-},
-"acrName": {
-"value": "myakshelloregistry123"
-},
-"namespace": {
-"value": "default"
-}
-}
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "resourceGroup": {
+      "value": "RG-AKS-Hello"
+    },
+    "aksClusterName": {
+      "value": "aks-hello-world"
+    },
+    "acrName": {
+      "value": "myakshelloregitry123"
+    },
+    "namespace": {
+      "value": "default"
+    },
+    "imageName": {
+      "value": "hello-world"
+    },
+    "location": {
+      "value": "eastus"
+    },
+    "nodeCount": {
+      "value": 1
+    }
+  }
 }
