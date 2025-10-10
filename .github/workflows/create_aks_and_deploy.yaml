@@ -24,16 +24,16 @@ jobs:
         run: |
          echo "Reading deployment parameters..."
          echo "Checking file content:"
-         cat aks.parameters.json || echo "⚠ File not found!"
+         cat aks-parameters.json || echo "⚠ File not found!"
     
          echo "Validating JSON file..."
-         jq . aks.parameters.json
+         jq . aks-parameters.json
     
          echo "Extracting values..."
-         RESOURCE_GROUP=$(jq -r '.parameters.resourceGroup.value' aks.parameters.json)
-         AKS_CLUSTER_NAME=$(jq -r '.parameters.aksClusterName.value' aks.parameters.json)
-         ACR_NAME=$(jq -r '.parameters.acrName.value' aks.parameters.json)
-         NAMESPACE=$(jq -r '.parameters.namespace.value' aks.parameters.json)
+         RESOURCE_GROUP=$(jq -r '.parameters.resourceGroup.value' aks-parameters.json)
+         AKS_CLUSTER_NAME=$(jq -r '.parameters.aksClusterName.value' aks-parameters.json)
+         ACR_NAME=$(jq -r '.parameters.acrName.value' aks-parameters.json)
+         NAMESPACE=$(jq -r '.parameters.namespace.value' aks-parameters.json)
 
          echo "RESOURCE_GROUP=$RESOURCE_GROUP" >> $GITHUB_ENV
          echo "AKS_CLUSTER_NAME=$AKS_CLUSTER_NAME" >> $GITHUB_ENV
