@@ -57,10 +57,11 @@ jobs:
          
       # Step 3: Set AKS Context
       - name: Set AKS Context
-        uses: azure/aks-set-context@v3
-        with:
-          resource-group: ${{ env.RESOURCE_GROUP }}
-          cluster-name: ${{ env.CLUSTER_NAME }}
+        run: |
+          echo "Setting AKS context..."
+          echo "Resource Group: ${{ env.RESOURCE_GROUP }}"
+          echo "AKS Cluster: ${{ env.AKS_CLUSTER_NAME }}"
+          az aks get-credentials --resource-group "${{ env.RESOURCE_GROUP }}" --name "${{ env.AKS_CLUSTER_NAME }}" --overwrite-existing
 
       # Step 4: Build and Push Docker image
       - name: Build and Push Docker image
