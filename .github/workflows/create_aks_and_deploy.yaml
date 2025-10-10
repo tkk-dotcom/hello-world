@@ -142,8 +142,8 @@ jobs:
           kubectl apply -f deployment.yaml -v=8 --validate=true
 
           echo "✅ YAML valid. Deploying to AKS..."
-          kubectl apply -f deployment.yaml --v=8 --validate=true
-          kubectl apply -f service.yaml --v=8 --validate=true
+          kubectl apply -f deployment.yaml --validate=true -v=8
+          kubectl apply -f service.yaml --validate=true -v=8
           
           # Step 11: Deploy to AKS
            - name: Deploy to AKS
