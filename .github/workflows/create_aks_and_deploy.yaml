@@ -135,23 +135,23 @@ jobs:
                echo "Applying Kubernetes deployment and service..."
                kubectl apply -f deployment.yaml -n ${{ env.NAMESPACE }}
 
-      # Step 11: Deploy to AKS
-      - name: Deploy to AKS
-        run: |
-          echo "Deploying to AKS..."
-          echo "Deployment: ${{ secrets.DEPLOYMENT_NAME }}"
-          echo "Container: ${{ secrets.CONTAINER_NAME }}"
-          echo "Image: ${{ env.IMAGE_FULL_NAME }}"
-          if [ -z "${{ secrets.DEPLOYMENT_NAME }}" ] || [ -z "${{ secrets.CONTAINER_NAME }}" ]; then
-          echo "❌ Missing secrets DEPLOYMENT_NAME or CONTAINER_NAME. Please set them in GitHub → Settings → Secrets → Actions."
-          exit 1
-          fi
+          # Step 11: Deploy to AKS
+           - name: Deploy to AKS
+             run: |
+               echo "Deploying to AKS..."
+               echo "Deployment: ${{ secrets.DEPLOYMENT_NAME }}"
+               echo "Container: ${{ secrets.CONTAINER_NAME }}"
+               echo "Image: ${{ env.IMAGE_FULL_NAME }}"
+               if [ -z "${{ secrets.DEPLOYMENT_NAME }}" ] || [ -z "${{ secrets.CONTAINER_NAME }}" ]; then
+               echo "❌ Missing secrets DEPLOYMENT_NAME or CONTAINER_NAME. Please set them in GitHub → Settings → Secrets → Actions."
+               exit 1
+               fi
 
           kubectl set image deployment/${{ secrets.DEPLOYMENT_NAME }} \
           ${{ secrets.CONTAINER_NAME }}=${{ env.IMAGE_FULL_NAME }} \
           -n ${{ env.NAMESPACE }}
 
-            kubectl rollout status deployment/${{ secrets.DEPLOYMENT_NAME }} -n ${{ env.NAMESPACE }}
+          kubectl rollout status deployment/${{ secrets.DEPLOYMENT_NAME }} -n ${{ env.NAMESPACE }}
 
       # Step 12: Verify Deployment
       - name: Verify Deployment
