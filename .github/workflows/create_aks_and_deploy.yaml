@@ -9,6 +9,13 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: RG-AKS-Hello
+   
+    env:
+      RESOURCE_GROUP: RG-AKS-Hello
+      AKS_CLUSTER_NAME: aks-hello-world
+      ACR_NAME: myakshelloregistry123
+      NAMESPACE: default
+
 
     permissions:
       id-token: write
