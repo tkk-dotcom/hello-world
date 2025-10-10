@@ -1,8 +1,16 @@
 {
-  "subscriptionId": "b590f1f1-13bc-44b8-9d18-59f594f13cf9",
-  "resourceGroup": "MyResourceGroup",
-  "aksClusterName": "MyAksCluster",
-  "acrName": "MyContainerRegistry",
-  "imageName": "hello-world",
-  "namespace":"default"
+  "parameters": {
+    "resourceGroup": {
+      "value": "RG-AKS-Hello"
+    },
+    "aksClusterName": {
+      "value": "aks-hello-world"
+    },
+    "acrName": {
+      "value": "myacrregistryname"
+    },
+    "namespace": {
+      "value": "default"
+    }
+  }
 }
