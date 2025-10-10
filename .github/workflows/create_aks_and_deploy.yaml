@@ -63,7 +63,13 @@ jobs:
           client-id: ${{ secrets.CLIENT_ID }}
           tenant-id: ${{ secrets.TENANT_ID }}
           subscription-id: ${{ secrets.SUBSCRIPTION_ID }}
+      - name: Build and Push Docker image
+        run: |
+          echo "Building Docker image..."
+          IMAGE_TAG=${{ github.run_number }}
+          IMAGE_FULL_NAME=${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:$IMAGE_TAG
 
+         
       # Step 4: Create Resource Group if not exists
       - name: Create Resource Group
         run: |
