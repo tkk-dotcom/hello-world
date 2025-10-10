@@ -80,7 +80,25 @@ jobs:
           echo "AKS Cluster: ${{ env.AKS_CLUSTER_NAME }}"
           az aks get-credentials --resource-group "${{ env.RESOURCE_GROUP }}" --name "${{ env.AKS_CLUSTER_NAME }}" --overwrite-existing
 
-      # Step 4: Build and Push Docker image
+        # Step: Create ACR
+      - name: Create Azure Container Registry
+        run: |
+          echo "Creating Azure Container Registry if not exists..."
+          az acr show --name "${{ env.ACR_NAME }}" >/dev/null 2>&1 || \
+          az acr create --name "${{ env.ACR_NAME }}" \
+          --resource-group "${{ env.RESOURCE_GROUP }}" \
+          --sku Basic \
+          --admin-enabled true
+
+      - name: Grant AKS access to ACR
+        run: |
+          echo "Granting AKS pull access to ACR..."
+          ACR_ID=$(az acr show --name "${{ env.ACR_NAME }}" --query id -o tsv)
+          az role assignment create --assignee $(az aks show --resource-group "${{ env.RESOURCE_GROUP }}" --name "${{ env.AKS_CLUSTER_NAME }}" --query "identity.principalId" -o tsv) \
+            --role "AcrPull" \ 
+            --scope $ACR_ID
+            
+       # Step 4: Build and Push Docker image
       - name: Build and Push Docker image
         run: |
           echo "Logging into Azure Container Registry..."
