@@ -1,0 +1,62 @@
+name: Deploy to AKS
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  RESOURCE_GROUP: myResourceGroup
+  CLUSTER_NAME: myAksCluster
+  ACR_NAME: myakshelloregistry123
+  DEPLOYMENT_FILE_URL: https://raw.githubusercontent.com/<your-github-username>/hello-world/main/deployment.yaml
+  SERVICE_FILE_URL: https://raw.githubusercontent.com/<your-github-username>/hello-world/main/service.yaml
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set AKS context
+        uses: azure/aks-set-context@v4
+with:
+          resource-group: ${{ env.RESOURCE_GROUP }}
+          cluster-name: ${{ env.CLUSTER_NAME }}
+
+      - name: Validate Kubernetes Access
+        run: |
+          echo "Checking access to AKS..."
+          kubectl get nodes
+
+      - name: Download Kubernetes Manifests using wget
+        run: |
+          echo "Downloading manifest files from GitHub..."
+          wget ${{ env.DEPLOYMENT_FILE_URL }} -O deployment.yaml
+          wget ${{ env.SERVICE_FILE_URL }} -O service.yaml
+
+          echo "Downloaded files:"
+          ls -l *.yaml
+
+      - name: Apply Kubernetes Manifests
+        run: |
+          echo "Applying Kubernetes deployment and service..."
+          kubectl apply -f deployment.yaml --validate=true -v=3
+          kubectl apply -f service.yaml --validate=true -v=3
+
+      - name: Verify Deployment Rollout
+        run: |
+          echo "Verifying rollout status..."
+          kubectl rollout status deployment/hello-world
+
+      - name: Get Service External IP
+        run: |
+          echo "Getting external IP for LoadBalancer service..."
+          kubectl get svc hello-world
