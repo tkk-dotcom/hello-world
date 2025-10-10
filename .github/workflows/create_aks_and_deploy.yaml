@@ -27,7 +27,7 @@ jobs:
          cat aks.parameters.json || echo "⚠ File not found!"
     
          echo "Validating JSON file..."
-         jq . aks-parameters.json
+         jq . aks.parameters.json
     
          echo "Extracting values..."
          RESOURCE_GROUP=$(jq -r '.parameters.resourceGroup.value' aks.parameters.json)
