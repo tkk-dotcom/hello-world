@@ -80,7 +80,6 @@ jobs:
               --resource-group "${{ env.RESOURCE_GROUP }}" \
               --name "${{ env.AKS_CLUSTER_NAME }}" \
               --node-count 1 \
-              --enable-addons monitoring \
               --generate-ssh-keys \
               --enable-managed-identity \
               --location "eastus"
