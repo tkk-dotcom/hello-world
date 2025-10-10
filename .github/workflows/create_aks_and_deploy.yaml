@@ -134,14 +134,12 @@ jobs:
        
 
       # Step 10: Apply Deployment manifest (creates resources if not present)
-      - name: Apply Kubernetes Manifests
+      - name: Validate and Apply Kubernetes YAML
         run: |
-          echo "🧪 Validating Kubernetes YAML syntax..."
-          kubectl apply --dry-run=client -f deployment.yaml || {
-          echo "❌ YAML validation failed. Printing file content for debugging:";
-          cat deployment.yaml
-          exit 1
-          }
+          echo "Validating Kubernetes YAML syntax..."
+          kubectl apply --dry-run=client -f deployment.yaml
+          echo "YAML valid. Deploying to AKS..."
+          kubectl apply -f deployment.yaml -v=8 --validate=true
 
           echo "✅ YAML valid. Deploying to AKS..."
           kubectl apply -f deployment.yaml --v=8 --validate=true
