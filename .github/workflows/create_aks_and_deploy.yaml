@@ -18,10 +18,10 @@ jobs:
         id: params
         run: |
           echo "Reading deployment parameters..."
-          RESOURCE_GROUP=$(jq -r '.parameters.resourceGroup.value' infra/aks.parameters.json)
-          CLUSTER_NAME=$(jq -r '.parameters.aksClusterName.value' infra/aks.parameters.json)
-          ACR_NAME=$(jq -r '.parameters.acrName.value' infra/aks.parameters.json)
-          IMAGE_NAME=$(jq -r '.parameters.imageName.value' infra/aks.parameters.json)
+          RESOURCE_GROUP=$(jq -r '.parameters.resourceGroup.value' aks.parameters.json)
+          CLUSTER_NAME=$(jq -r '.parameters.aksClusterName.value' aks.parameters.json)
+          ACR_NAME=$(jq -r '.parameters.acrName.value' aks.parameters.json)
+          IMAGE_NAME=$(jq -r '.parameters.imageName.value' aks.parameters.json)
 
           echo "RESOURCE_GROUP=$RESOURCE_GROUP" >> $GITHUB_ENV
           echo "CLUSTER_NAME=$CLUSTER_NAME" >> $GITHUB_ENV
