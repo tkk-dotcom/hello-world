@@ -22,7 +22,6 @@ jobs:
       contents: read
 
     steps:
-      # Step 1: Checkout code
       - name: Checkout Code
         uses: actions/checkout@v4
 
@@ -92,7 +91,7 @@ jobs:
           kubectl get namespace ${{ env.NAMESPACE }} || kubectl create namespace ${{ env.NAMESPACE }}
 
       # Step 8: Build and Push Docker Image
-       - name: Build and Push Docker image
+      - name: Build and Push Docker image
         run: |
           echo "Logging into Azure Container Registry..."
           TOKEN=$(az acr login --name ${{ env.ACR_NAME }} --expose-token --output tsv --query accessToken)
