@@ -94,18 +94,7 @@ jobs:
           # Ensure the Azure CLI ACR extension is available
           az extension add --name acr --yes || echo "ACR extension already installed."
 
-         # Check if registry exists, otherwise create it
          
-if ! az acr show --name "${{ env.ACR_NAME }}" --resource-group "${{ env.RESOURCE_GROUP }}" >/dev/null 2>&1; then    echo "Creating new ACR: ${{ env.ACR_NAME }}"
-         az acr create \
-          --name "${{ env.ACR_NAME }}" \
-          --resource-group "${{ env.RESOURCE_GROUP }}" \
-          --sku Basic \
-          --admin-enabled true
-      else
-        echo "ACR ${{ env.ACR_NAME }} already exists ✅"
-     fi
-
       - name: Grant AKS access to ACR
         run: |
           echo "Granting AKS pull access to ACR..."
