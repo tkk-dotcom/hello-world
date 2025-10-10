@@ -63,6 +63,23 @@ jobs:
           echo "AKS Cluster: ${{ env.AKS_CLUSTER_NAME }}"
           az aks get-credentials --resource-group "${{ env.RESOURCE_GROUP }}" --name "${{ env.AKS_CLUSTER_NAME }}" --overwrite-existing
 
+      - name: Create Resource Group
+        run: |
+          echo "Creating Resource Group if not exists..."
+          az group create --name "${{ env.RESOURCE_GROUP }}" --location "eastus"
+
+      - name: Create AKS Cluster
+        run: |
+          echo "Creating AKS Cluster if not exists..."
+          az aks show --name "${{ env.AKS_CLUSTER_NAME }}" --resource-group "${{ env.RESOURCE_GROUP }}" >/dev/null 2>&1 || \
+          az aks create \
+          --resource-group "${{ env.RESOURCE_GROUP }}" \
+          --name "${{ env.AKS_CLUSTER_NAME }}" \
+          --node-count 1 \
+          --enable-addons monitoring \
+          --generate-ssh-keys \
+          --enable-managed-identity
+
       # Step 4: Build and Push Docker image
       - name: Build and Push Docker image
         run: |
