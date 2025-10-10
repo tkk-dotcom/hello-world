@@ -9,6 +9,10 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: RG-AKS-Hello
+
+    permissions:
+      id-token: write
+      contents: read
     
     steps:
       - name: Checkout Code
