@@ -87,13 +87,7 @@ jobs:
           echo "AKS Cluster: ${{ env.AKS_CLUSTER_NAME }}"
           az aks get-credentials --resource-group "${{ env.RESOURCE_GROUP }}" --name "${{ env.AKS_CLUSTER_NAME }}" --overwrite-existing
 
-        # Step: Create ACR
-      - name: Create Azure Container Registry
-        run: |
-          echo "Creating Azure Container Registry if not exists..."
-          # Ensure the Azure CLI ACR extension is available
-          az extension add --name acr --yes || echo "ACR extension already installed."
-         
+             
       - name: Grant AKS access to ACR
         run: |
           echo "Granting AKS pull access to ACR..."
