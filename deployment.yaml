@@ -16,7 +16,7 @@ template:
 spec:
   containers:
     - name: hello-container
-      image: myakshelloregitry123.azurecr.io/hello-world:latest
+      image: image: myakshelloregistry123.azurecr.io/hello-world:65 
       ports:
       - containerPort: 8080
 ---
