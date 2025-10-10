@@ -7,7 +7,7 @@
 "value": "aks-hello-world"
 },
 "acrName": {
-"value": "myacrregistryname"
+"value": "myakshelloregistry123"
 },
 "namespace": {
 "value": "default"
