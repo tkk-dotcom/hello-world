@@ -133,42 +133,35 @@ jobs:
           echo "✅ Docker image pushed: $IMAGE_FULL_NAME"
        
 
-      # Step 10: Apply Deployment manifest (creates resources if not present)
+      # Step 11: Apply Deployment manifest (creates resources if not present)
       - name: Validate and Apply Kubernetes YAML
+        shell: bash
         run: |
-          echo "🔍 Checking kubectl version..."
-          KUBE_VER=$(kubectl version --client --short | awk '{print $3}' | sed 's/v//g' | cut -d'.' -f1,2)
+          echo "Checking kubectl version..."
+          # Detect kubectl version safely (works even if --short is unavailable)
+          KUBE_VER=$(kubectl version --client | grep "GitVersion" | awk -F '"' '{print $4}' | sed 's/v//g' | cut -d'.' -f1,2)
           echo "Detected kubectl version: $KUBE_VER"
+        # Determine validation flag automatically
+        echo "Using validation flag: $VALIDATE_FLAG"
+         echo "Validating YAML files..."
+         kubectl apply --dry-run=client -f deployment.yaml $VALIDATE_FLAG -v=3
+         kubectl apply --dry-run=client -f service.yaml $VALIDATE_FLAG -v=3
+
+         echo "Deploying YAMLs to AKS..."
+         kubectl apply -f deployment.yaml $VALIDATE_FLAG -v=3
+         kubectl apply -f service.yaml $VALIDATE_FLAG -v=3
           
-          # Default flag
-          VALIDATE_FLAG="--validate=true"
-          
-          # Adjust validation flag for new versions (>=1.31)
-          if (( $(echo "$KUBE_VER >= 1.31" | bc -l) )); then
-          VALIDATE_FLAG="--validate=strict"
+          # Step 12: Deploy to AKS
+      - name: Deploy to AKS
+        run: |
+          echo "Deploying to AKS..."
+          echo "Deployment: ${{ secrets.DEPLOYMENT_NAME }}"
+          echo "Container: ${{ secrets.CONTAINER_NAME }}"
+          echo "Image: ${{ env.IMAGE_FULL_NAME }}"
+          if [ -z "${{ secrets.DEPLOYMENT_NAME }}" ] || [ -z "${{ secrets.CONTAINER_NAME }}" ]; then
+          echo "❌ Missing secrets DEPLOYMENT_NAME or CONTAINER_NAME. Please set them in GitHub → Settings → Secrets → Actions."
+          exit 1
           fi
-
-          echo "Using validation flag: $VALIDATE_FLAG"
-
-          echo "🔍 Validating YAML files..."
-          kubectl apply --dry-run=client -f deployment.yaml $VALIDATE_FLAG -v=3
-          kubectl apply --dry-run=client -f service.yaml $VALIDATE_FLAG -v=3
-
-          echo "✅ YAML validation passed. Deploying to AKS..."
-          kubectl apply -f deployment.yaml $VALIDATE_FLAG -v=3
-          kubectl apply -f service.yaml $VALIDATE_FLAG -v=3
-          
-          # Step 11: Deploy to AKS
-           - name: Deploy to AKS
-             run: |
-               echo "Deploying to AKS..."
-               echo "Deployment: ${{ secrets.DEPLOYMENT_NAME }}"
-               echo "Container: ${{ secrets.CONTAINER_NAME }}"
-               echo "Image: ${{ env.IMAGE_FULL_NAME }}"
-               if [ -z "${{ secrets.DEPLOYMENT_NAME }}" ] || [ -z "${{ secrets.CONTAINER_NAME }}" ]; then
-               echo "❌ Missing secrets DEPLOYMENT_NAME or CONTAINER_NAME. Please set them in GitHub → Settings → Secrets → Actions."
-               exit 1
-               fi
 
           kubectl set image deployment/${{ secrets.DEPLOYMENT_NAME }} \
           ${{ secrets.CONTAINER_NAME }}=${{ env.IMAGE_FULL_NAME }} \
@@ -176,8 +169,8 @@ jobs:
 
           kubectl rollout status deployment/${{ secrets.DEPLOYMENT_NAME }} -n ${{ env.NAMESPACE }}
 
-      # Step 12: Verify Deployment
-      - name: Verify Deployment
-        run: |
-          echo "Verifying pods in namespace ${{ env.NAMESPACE }}..."
-          kubectl get pods -n ${{ env.NAMESPACE }}
+         # Step 13: Verify Deployment
+          - name: Verify Deployment
+            run: |
+              echo "Verifying pods in namespace ${{ env.NAMESPACE }}..."
+              kubectl get pods -n ${{ env.NAMESPACE }}
