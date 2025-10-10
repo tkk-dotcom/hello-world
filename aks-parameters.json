@@ -1,0 +1,16 @@
+{
+  "parameters": {
+    "resourceGroup": {
+      "value": "RG-AKS-Hello"
+    },
+    "aksClusterName": {
+      "value": "aks-hello-world"
+    },
+    "acrName": {
+      "value": "myacrregistryname"
+    },
+    "namespace": {
+      "value": "default"
+    }
+  }
+}
