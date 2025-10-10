@@ -61,12 +61,14 @@ jobs:
           client-id: ${{ secrets.CLIENT_ID }}
           tenant-id: ${{ secrets.TENANT_ID }}
           subscription-id: ${{ secrets.SUBSCRIPTION_ID }}
-         
+
+         # Step 3:  Create Resource group
       - name: Create Resource Group
         run: |
           echo "Creating Resource Group if not exists..."
           az group create --name "${{ env.RESOURCE_GROUP }}" --location "eastus"
-
+          
+         # Step 4: Create AKS Cluster
       - name: Create AKS Cluster
         run: |
           echo "Creating AKS Cluster if not exists..."
@@ -79,29 +81,45 @@ jobs:
           --generate-ssh-keys \
           --enable-managed-identity
 
-          # Step 3: Set AKS Context
-      - name: Set AKS Context
+      - name: Get AKS Credentials
         run: |
-          echo "Setting AKS context..."
-          echo "Resource Group: ${{ env.RESOURCE_GROUP }}"
-          echo "AKS Cluster: ${{ env.AKS_CLUSTER_NAME }}"
-          az aks get-credentials --resource-group "${{ env.RESOURCE_GROUP }}" --name "${{ env.AKS_CLUSTER_NAME }}" --overwrite-existing
-             
-        # Step 4: Build and Push Docker image
-      - name: Build and Push Docker image
-        run: |
-          echo "Logging into Azure Container Registry..."
-          az acr login --name ${{ env.ACR_NAME }}
+          az aks get-credentials --resource-group $RESOURCE_GROUP --name $CLUSTER_NAME --overwrite-existing
 
-          IMAGE_TAG=${{ github.run_number }}
-          IMAGE_FULL_NAME=${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:$IMAGE_TAG
-          echo "Building image: $IMAGE_FULL_NAME"
-          docker build -t $IMAGE_FULL_NAME .
-          docker push $IMAGE_FULL_NAME
-
-      # Step 5: Deploy to AKS
-      - name: Deploy to AKS
+      - name: Deploy Hello World App
         run: |
-          kubectl set image deployment/${{ secrets.DEPLOYMENT_NAME }} \
-            ${{ secrets.CONTAINER_NAME }}=${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.run_number }}
-          kubectl rollout status deployment/${{ secrets.DEPLOYMENT_NAME }}
+          cat > hello-deployment.yaml <<EOF
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: $APP_NAME
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: $APP_NAME
+            template:
+              metadata:
+                labels:
+                  app: $APP_NAME
+              spec:
+                containers:
+                - name: $APP_NAME
+                  image: $IMAGE_NAME
+                  ports:
+                  - containerPort: $PORT
+          ---
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: ${APP_NAME}-service
+          spec:
+            type: LoadBalancer
+            selector:
+              app: $APP_NAME
+            ports:
+            - port: 80
+              targetPort: $PORT
+          EOF
+
+          kubectl apply -f hello-deployment.yaml
+          kubectl get service ${APP_NAME}-service
