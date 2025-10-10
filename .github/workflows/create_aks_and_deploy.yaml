@@ -98,25 +98,28 @@ jobs:
         run: |
           kubectl get namespace ${{ env.NAMESPACE }} || kubectl create namespace ${{ env.NAMESPACE }}
 
-          # ✅ Step 8: Ensure ACR Exists
+      # Step 8: Ensure ACR Exists
       - name: Create Azure Container Registry if not exists
         run: |
           echo "Checking if ACR exists..."
           if ! az acr show --name "${{ env.ACR_NAME }}" --resource-group "${{ env.RESOURCE_GROUP }}" >/dev/null 2>&1; then
-          echo "Creating Azure Container Registry..."
-          az acr create \
-          --resource-group "${{ env.RESOURCE_GROUP }}" \
-          --name "${{ env.ACR_NAME }}" \
-          --sku Basic \
-          --admin-enabled true
-          else
-          echo "ACR already exists."
-          fi
-          
-          - name: Login to Azure Container Registry
-            run: echo ${{ secrets.ACR_PASSWORD }} | docker login ${{ env.ACR_NAME }}.azurecr.io -u ${{ secrets.ACR_USERNAME }} --password-stdin
+            echo "Creating Azure Container Registry..."
+            az acr create \
+              --resource-group "${{ env.RESOURCE_GROUP }}" \
+              --name "${{ env.ACR_NAME }}" \
+              --sku Basic \
+              --admin-enabled true
+             echo "acr_exists=false" >> $GITHUB_OUTPUT
+           else
+             echo "ACR already exists."
+             echo "acr_exists=true" >> $GITHUB_OUTPUT
+           fi
 
-      # Step 9: Build and Push Docker Image
+        # Step 9: Login to ACR
+      - name: Login to Azure Container Registry
+        run: echo ${{ secrets.ACR_PASSWORD }} | docker login ${{ env.ACR_NAME }}.azurecr.io -u ${{ secrets.ACR_USERNAME }} --password-stdin
+
+        # Step 10: Build and Push Docker Image
       - name: Build and Push Docker image
         run: |
           echo "Building Docker image..."
@@ -128,6 +131,7 @@ jobs:
 
           echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
           echo "✅ Docker image pushed: $IMAGE_FULL_NAME"
+       
 
       # Step 10: Apply Deployment manifest (creates resources if not present)
       - name: Apply Kubernetes Manifests
