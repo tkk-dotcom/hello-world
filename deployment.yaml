@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+name: hello-deployment
+labels:
+app: hello-world
+spec:
+replicas: 1
+selector:
+matchLabels:
+app: hello-world
+template:
+metadata:
+labels:
+app: hello-world
+spec:
+containers:
+- name: hello-container
+image: myakshelloregitry123.azurecr.io/hello-world:latest
+ports:
+- containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+name: hello-service
+spec:
+selector:
+app: hello-world
+ports:
+- protocol: TCP
+port: 80
+targetPort: 8080
+type: LoadBalancer
