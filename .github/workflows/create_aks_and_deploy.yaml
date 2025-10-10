@@ -16,6 +16,10 @@ jobs:
       ACR_NAME: myakshelloregitry123
       IMAGE_NAME: hello-world
       NAMESPACE: default
+      DEPLOYMENT_FILE_URL: https://raw.githubusercontent.com/<your-github-username>/hello-world/main/deployment.yaml
+      SERVICE_FILE_URL: https://raw.githubusercontent.com/<your-github-username>/hello-world/main/service.yaml
+
+
 
     permissions:
       id-token: write
@@ -131,3 +135,39 @@ jobs:
 
           echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
           echo "✅ Docker image pushed: $IMAGE_FULL_NAME"
+
+          - name: Set AKS context
+            uses: azure/aks-set-context@v4
+            with:
+          resource-group: ${{ env.RESOURCE_GROUP }}
+          cluster-name: ${{ env.AKS_CLUSTER_NAME }}
+
+          - name: Validate Kubernetes Access
+            run: |
+              echo "Checking access to AKS..."
+              kubectl get nodes
+
+          - name: Download Kubernetes Manifests using wget
+            run: |
+              echo "Downloading manifest files from GitHub..."
+              wget ${{ env.DEPLOYMENT_FILE_URL }} -O deployment.yaml
+              wget ${{ env.SERVICE_FILE_URL }} -O service.yaml
+
+              echo "Downloaded files:"
+              ls -l *.yaml
+
+          - name: Apply Kubernetes Manifests
+            run: |
+              echo "Applying Kubernetes deployment and service..."
+              kubectl apply -f deployment.yaml --validate=true -v=3
+              kubectl apply -f service.yaml --validate=true -v=3
+
+          - name: Verify Deployment Rollout
+            run: |
+              echo "Verifying rollout status..."
+              kubectl rollout status deployment/hello-world
+
+          - name: Get Service External IP
+            run: |
+              echo "Getting external IP for LoadBalancer service..."
+              kubectl get svc hello-world
