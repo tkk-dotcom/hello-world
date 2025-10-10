@@ -13,7 +13,7 @@ jobs:
     env:
       RESOURCE_GROUP: RG-AKS-Hello
       AKS_CLUSTER_NAME: aks-hello-world
-      ACR_NAME: myakshelloregistry123
+      ACR_NAME: myakshelloregitry123
       NAMESPACE: default
 
 
@@ -93,15 +93,13 @@ jobs:
           echo "Creating Azure Container Registry if not exists..."
           # Ensure the Azure CLI ACR extension is available
           az extension add --name acr --yes || echo "ACR extension already installed."
-
          
       - name: Grant AKS access to ACR
         run: |
           echo "Granting AKS pull access to ACR..."
-          ACR_ID=$(az acr show --name "${{ env.ACR_NAME }}" --query id -o tsv)
-          az role assignment create --assignee $(az aks show --resource-group "${{ env.RESOURCE_GROUP }}" --name "${{ env.AKS_CLUSTER_NAME }}" --query "identity.principalId" -o tsv) \
-            --role "AcrPull" \ 
-            --scope $ACR_ID
+          ACR_ID=$(az acr show --name "${{ env.ACR_NAME }}" --resource-group "${{ env.RESOURCE_GROUP }}" --query id --output tsv)
+          AKS_ID=$(az aks show --name "${{ env.AKS_CLUSTER_NAME }}" --resource-group "${{ env.RESOURCE_GROUP }}" --query identityProfile.kubeletidentity.clientId -o tsv)
+          az role assignment create --assignee $AKS_ID --role "AcrPull" --scope $ACR_ID
             
        # Step 4: Build and Push Docker image
       - name: Build and Push Docker image
