@@ -98,7 +98,22 @@ jobs:
         run: |
           kubectl get namespace ${{ env.NAMESPACE }} || kubectl create namespace ${{ env.NAMESPACE }}
 
-      # Step 8: Build and Push Docker Image
+          # ✅ Step 8: Ensure ACR Exists
+      - name: Create Azure Container Registry if not exists
+        run: |
+          echo "Checking if ACR exists..."
+          if ! az acr show --name "${{ env.ACR_NAME }}" --resource-group "${{ env.RESOURCE_GROUP }}" >/dev/null 2>&1; then
+          echo "Creating Azure Container Registry..."
+          az acr create \
+          --resource-group "${{ env.RESOURCE_GROUP }}" \
+          --name "${{ env.ACR_NAME }}" \
+          --sku Basic \
+          --admin-enabled true
+          else
+          echo "ACR already exists."
+          fi
+
+      # Step 9: Build and Push Docker Image
       - name: Build and Push Docker image
         run: |
           echo "Logging into Azure Container Registry..."
@@ -114,7 +129,7 @@ jobs:
 
           echo "IMAGE_FULL_NAME=$IMAGE_FULL_NAME" >> $GITHUB_ENV
 
-      # Step 9: Deploy to AKS
+      # Step 10: Deploy to AKS
       - name: Deploy to AKS
         run: |
           echo "Deploying to AKS..."
@@ -122,7 +137,7 @@ jobs:
             ${{ secrets.CONTAINER_NAME }}=${{ env.IMAGE_FULL_NAME }}
           kubectl rollout status deployment/${{ secrets.DEPLOYMENT_NAME }} -n ${{ env.NAMESPACE }}
 
-      # Step 10: Verify Deployment
+      # Step 11: Verify Deployment
       - name: Verify Deployment
         run: |
           echo "Verifying pods in namespace ${{ env.NAMESPACE }}..."
